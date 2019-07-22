@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>C:\Registration_meshes\synthetic_model\mesh_bruite\modele\ObjetSynthetique_clean_full_res_m0_s0.16667.pcd</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>C:\Registration\Test\meshRegistration\synthetic_model\10_06_19\no_scale\theta1.57_t0_10_20Z\ObjetSynthetique_simp32_source_m0_s0_.pcd 1.02 2.04 5.10</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>C:\Registration_meshes\synthetic_model\mesh_bruite\modele\ObjetSynthetique_clean_full_res_m0_s0.16667.pcd 10.0</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>C:\Registration\Test\meshRegistration\synthetic_model\10_07_19\no_scale\theta1.57_t0_10_20Z\ObjetSynthetique_simp32_source_m0_s0_.pcd 1.02 2.04 5.10</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

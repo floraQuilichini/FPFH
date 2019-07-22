@@ -101,12 +101,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files\PCL_1.8.1\include\pcl-1.8;C:\Program Files\PCL_1.8.1\3rdParty\Boost\include\boost-1_64;C:\Program Files\PCL_1.8.1\3rdParty\Eigen\eigen3;C:\Program Files\PCL_1.8.1\3rdParty\FLANN\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\PCL_1.8.1\include\pcl-1.8;C:\dev\PCL_1.8.1\3rdParty\Boost\include\boost-1_64;C:\dev\PCL_1.8.1\3rdParty\Eigen\eigen3;C:\dev\PCL_1.8.1\3rdParty\FLANN\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Program Files\PCL_1.8.1\3rdParty\FLANN\lib;C:\Program Files\PCL_1.8.1\3rdParty\Boost\lib;C:\Program Files\PCL_1.8.1\3rdParty\Qhull\lib;C:\Program Files\PCL_1.8.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\dev\PCL_1.8.1\3rdParty\FLANN\lib;C:\dev\PCL_1.8.1\3rdParty\Boost\lib;C:\dev\PCL_1.8.1\3rdParty\Qhull\lib;C:\dev\PCL_1.8.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>pcl_common_debug.lib;pcl_features_debug.lib;pcl_filters_debug.lib;pcl_io_ply_debug.lib;pcl_io_debug.lib;pcl_kdtree_debug.lib;pcl_keypoints_debug.lib;pcl_ml_debug.lib;pcl_octree_debug.lib;pcl_people_debug.lib;pcl_registration_debug.lib;pcl_sample_consensus_debug.lib;pcl_search_debug.lib;pcl_segmentation_debug.lib;pcl_stereo_debug.lib;pcl_surface_debug.lib;pcl_tracking_debug.lib;pcl_outofcore_debug.lib;pcl_visualization_debug.lib;libboost_thread-vc140-mt-gd-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -136,14 +136,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_RELEASE;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files\PCL_1.8.1\include\pcl-1.8;C:\Program Files\PCL_1.8.1\3rdParty\Boost\include\boost-1_64;C:\Program Files\PCL_1.8.1\3rdParty\Eigen\eigen3;C:\Program Files\PCL_1.8.1\3rdParty\FLANN\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\PCL_1.8.1\include\pcl-1.8;C:\dev\PCL_1.8.1\3rdParty\Boost\include\boost-1_64;C:\dev\PCL_1.8.1\3rdParty\Eigen\eigen3;C:\dev\PCL_1.8.1\3rdParty\FLANN\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Program Files\PCL_1.8.1\3rdParty\FLANN\lib;C:\Program Files\PCL_1.8.1\3rdParty\Boost\lib;C:\Program Files\PCL_1.8.1\3rdParty\Qhull\lib;C:\Program Files\PCL_1.8.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\dev\PCL-dependencies\OpenNI2\Lib;C:\dev\PCL_1.8.1\3rdParty\FLANN\lib;C:\dev\PCL_1.8.1\3rdParty\Boost\lib;C:\dev\PCL_1.8.1\3rdParty\Qhull\lib;C:\dev\PCL_1.8.1\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>pcl_common_release.lib;pcl_features_release.lib;pcl_filters_release.lib;pcl_io_ply_release.lib;pcl_io_release.lib;pcl_kdtree_release.lib;pcl_keypoints_release.lib;pcl_ml_release.lib;pcl_octree_release.lib;pcl_people_release.lib;pcl_registration_release.lib;pcl_sample_consensus_release.lib;pcl_search_release.lib;pcl_segmentation_release.lib;pcl_stereo_release.lib;pcl_surface_release.lib;pcl_tracking_release.lib;pcl_outofcore_release.lib;pcl_visualization_release.lib;libboost_thread-vc140-mt-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
