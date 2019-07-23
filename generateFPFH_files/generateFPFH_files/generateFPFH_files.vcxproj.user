@@ -5,7 +5,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>C:\Registration\Test\meshRegistration\synthetic_model\10_07_19\no_scale\theta1.57_t0_10_20Z\ObjetSynthetique_simp32_source_m0_s0_.pcd 1.02 2.04 5.10</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>C:\Registration\Test\meshRegistration\synthetic_model\23_07_19\test\theta1.57_t0_10_6X\ObjetSynthetique_simp32_source_m0_s0.3_downsampled0.9.pcd C:\Registration\Test\meshRegistration\synthetic_model\23_07_19\test\theta1.57_t0_10_6X\ObjetSynthetique_simp32_source_m0_s0.3.pcd 0 14.26 35.66</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

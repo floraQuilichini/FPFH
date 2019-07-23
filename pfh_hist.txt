@@ -1,0 +1,45 @@
+// fpfh histograms
+
+// Create the FPFH estimation class, and pass the input dataset+normals to it
+	pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fest;
+	pcl::PFHEstimation< pcl::PointXYZ, pcl::Normal, pcl::PFHSignature125 > pfhest;
+	// output dataset
+	pcl::PointCloud<pcl::PFHSignature125>::Ptr pfh_features(new pcl::PointCloud<pcl::PFHSignature125>());
+	if (features_pc)
+	{
+		/*fest.setInputCloud(features_pc);*/
+
+		// get neighbooring indexes we need to compute normal at fpfh points
+		pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+
+		kdtree.setInputCloud(features_pc);
+
+		for (size_t i = 0; i < sub_sample_object->size(); ++i)
+		{
+			/*Eigen::Vector4f plane_parameters;
+			float curvature;*/
+			Eigen::VectorXf pfh_histogram;
+			std::vector< int > k_indices;
+			std::vector< float > k_sqr_distances;
+			pcl::PointXYZ query_point = sub_sample_object->points[i];
+			// find neighbooring points to compute the features
+			kdtree.radiusSearch(query_point, r_neighboors, k_indices, k_sqr_distances);
+			// compute pfh features (feature is stored in pfh_histogram)
+			pfhest.computePointPFHSignature(*features_pc, *normals, k_indices, 125, pfh_histogram);
+
+			
+		}
+
+	}
+	else
+		fest.setInputCloud(sub_sample_object);
+	fest.setInputNormals(normals);
+
+	// output dataset
+	pcl::PointCloud<pcl::FPFHSignature33>::Ptr object_features(new pcl::PointCloud<pcl::FPFHSignature33>());
+
+	// Use all neighbors in a sphere of radius 5cm by default
+	fest.setRadiusSearch(r_neighboors); // the feature radius can be a parameter
+
+	// Compute the features
+	fest.compute(*object_features);

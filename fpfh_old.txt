@@ -1,16 +1,21 @@
+// fpfh old version for computing on selected points
+
 #include "stdafx.h"
 #include <iostream>
 #include <fstream>
 #include <pcl/pcl_base.h>
 #include <pcl/point_types.h>
+#include <pcl/PointIndices.h>
+#include <pcl/features/pfh.h>
 #include <pcl/features/fpfh.h>
 #include <pcl/features/fpfh_omp.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/extract_indices.h>
 #include <stdio.h>
 #include <string>
-#include <set>
+#include <map>
 
 
 std::string getFileName(const std::string& s) {
@@ -53,6 +58,7 @@ std::string getFileDir(const std::string& s) {
 }
 
 
+
 struct PointXYZcomp {
 	bool operator() (const pcl::PointXYZ& p, const pcl::PointXYZ& q) const
 	{
@@ -85,6 +91,7 @@ struct PointXYZcomp {
 };
 
 
+
 // pcd input file must have their coordinates in float type (SIZE 4 4 4). 
 // otherwise it won't be read
 int main(int argc, const char** argv)
@@ -93,7 +100,7 @@ int main(int argc, const char** argv)
 	// check the input
 	if (argc < 3) {
 		PCL_ERROR("you must enter first the filepath of the point cloud where to compute the fpfh"); // take as input a pcd file
-		PCL_ERROR("you must enter secondly the filepath of the point cloud used to approximate the surface");
+		PCL_ERROR("you must enter secondly the filepath of the point cloud used to compute the features (normal and neighboors)");
 		PCL_ERROR("there is another optional argument that you can enter; it's the size of voxel for subsampling");
 		return (-1);
 	}
@@ -118,22 +125,22 @@ int main(int argc, const char** argv)
 		<< " data points from fpfh_pcd.pcd "
 		<< std::endl;
 
-	// read features pcd file
-	std::string surface_pc_filepath = argv[2];
-	pcl::PointCloud<pcl::PointXYZ>::Ptr surface_pc(new pcl::PointCloud<pcl::PointXYZ>); // cloud of points
+	// read fpfh pcd file
+	std::string features_pc_filepath = argv[2];
+	pcl::PointCloud<pcl::PointXYZ>::Ptr features_pc(new pcl::PointCloud<pcl::PointXYZ>); // cloud of points
 
-	if (surface_pc_filepath.compare("-") == 0)
-		surface_pc = NULL;
+	if (features_pc_filepath.compare("-") == 0)
+		features_pc = NULL;
 	else
 	{
-		if (pcl::io::loadPCDFile<pcl::PointXYZ>(surface_pc_filepath, *surface_pc) == -1) //* load the file
+		if (pcl::io::loadPCDFile<pcl::PointXYZ>(features_pc_filepath, *features_pc) == -1) //* load the file
 		{
 			PCL_ERROR("Couldn't read pcd file \n");
 			return (-1);
 		}
 
 		std::cout << "Loaded "
-			<< surface_pc->width * surface_pc->height
+			<< features_pc->width * features_pc->height
 			<< " data points from features_pcd.pcd "
 			<< std::endl;
 	}
@@ -181,74 +188,113 @@ int main(int argc, const char** argv)
 	}
 
 
-	// get the number of points where to compute the normals
-	pcl::PointCloud<pcl::PointXYZ>::Ptr feature_point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-	if (surface_pc)
+	// in case we use the finer version of the point cloud to compute features, we have to create the final version of the point cloud we will use to compute FPFH (ie : subsampled fpfh_pc + neighbooring_points)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr fpfh_point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	std::vector<int> indices;
+	if (features_pc)
 	{
-		std::set<pcl::PointXYZ, PointXYZcomp> unique_points;
+		std::map<pcl::PointXYZ, bool, PointXYZcomp> unique_points;
+
 		// get all the neighbooring points of the input cloud
 		pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
-		kdtree.setInputCloud(surface_pc);
+		kdtree.setInputCloud(features_pc);
 
+			// insert fpfh points
+		for (size_t i = 0; i < sub_sample_object->size(); ++i)
+		{
+			pcl::PointXYZ neighboors_query_point = sub_sample_object->points[i];
+			unique_points.insert(std::make_pair(neighboors_query_point, false));
+			fpfh_point_cloud->push_back(neighboors_query_point);
+			indices.push_back(i);
+		}
 
+			// insert neighboors points
 		for (size_t i = 0; i < sub_sample_object->size(); ++i)
 		{
 			std::vector< int > k_neighboors_indices;
 			std::vector< float > k_sqr_distances;
 			pcl::PointXYZ neighboors_query_point = sub_sample_object->points[i];
-			unique_points.insert(neighboors_query_point);
 			// find neighbooring points where to compute the normal
 			kdtree.radiusSearch(neighboors_query_point, r_neighboors, k_neighboors_indices, k_sqr_distances);
 			for (size_t j = 0; j < k_neighboors_indices.size(); ++j)
 			{
-				pcl::PointXYZ normal_query_point = surface_pc->points[k_neighboors_indices[j]];
-				unique_points.insert(normal_query_point);
+				pcl::PointXYZ normal_query_point = features_pc->points[k_neighboors_indices[j]];
+				unique_points.insert(std::make_pair(normal_query_point, true));
 			}
 		}
 
 		for (auto it = unique_points.begin(); it != unique_points.end(); ++it)
-				feature_point_cloud->push_back(*it);
+		{
+			if (it->second)
+				fpfh_point_cloud->push_back(it->first);
+			
+		}
 	}
 
 
 	// compute normals
 	pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>());  //cloud of normals
 
-    // Create the normal estimation class, and pass the input dataset to it
+	// Create the normal estimation class, and pass the input dataset to it
 	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-
-	if (surface_pc)
+	if (features_pc)
 	{
-		ne.setInputCloud(feature_point_cloud);
-		ne.setSearchSurface(surface_pc);
+		pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+		kdtree.setInputCloud(features_pc);
+		// compute normal on normal_query_points (ie fpfh_point_cloul)
+		for (size_t i = 0; i <  fpfh_point_cloud->size(); ++i)
+		{
+			Eigen::Vector4f plane_parameters;
+			float curvature;
+			std::vector< int > k_indices;
+			std::vector< float > k_sqr_distances;
+			pcl::PointXYZ query_point = fpfh_point_cloud->points[i];
+			// find neighbooring points to compute the normal
+			kdtree.radiusSearch(query_point, r_normals, k_indices, k_sqr_distances);
+			// compute normal
+			pcl::computePointNormal<pcl::PointXYZ>(*features_pc, k_indices, plane_parameters, curvature);
+			pcl::Normal point_normal(plane_parameters[0], plane_parameters[1], plane_parameters[2]);
+			// store normal
+			normals->push_back(point_normal);
+		}
+
 	}
 	else
+	{
 		ne.setInputCloud(sub_sample_object);
-	
-	// Create an empty kdtree representation, and pass it to the normal estimation object.
-	// Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr normal_search_tree(new pcl::search::KdTree<pcl::PointXYZ>());
-	ne.setSearchMethod(normal_search_tree);
 
-	// Use all neighbors in a sphere of radius 2cm by default
-	ne.setRadiusSearch(r_normals);
+		// Create an empty kdtree representation, and pass it to the normal estimation object.
+		// Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
+		pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
+		ne.setSearchMethod(tree);
 
-	// Compute the features
-	ne.compute(*normals);
+		// Use all neighbors in a sphere of radius 2cm by default
+		ne.setRadiusSearch(r_normals);
+
+		// Compute the features
+		ne.compute(*normals);
+	}
 
 
-	// compute FPFH
+	// Create the FPFH estimation class, and pass the input dataset+normals to it
 	pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fest;
-	fest.setInputCloud(sub_sample_object);
-	if (surface_pc)
-		fest.setSearchSurface(feature_point_cloud);
+	if (features_pc)
+	{
+		fest.setInputCloud(fpfh_point_cloud);
+		pcl::PointIndices::Ptr ind_ptr(new pcl::PointIndices);
+		ind_ptr->indices = indices;
+		fest.setIndices(ind_ptr);
+		//fest.setSearchSurface(fpfh_point_cloud);
+	}
+
+	else
+	{
+		fest.setInputCloud(sub_sample_object);
+		// Use all neighbors in a sphere of radius 5cm by default
+		fest.setRadiusSearch(r_neighboors); // the feature radius can be a parameter
+	}
 
 	fest.setInputNormals(normals);
-
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr neighboors_search_tree(new pcl::search::KdTree<pcl::PointXYZ>());
-	fest.setSearchMethod(neighboors_search_tree);
-
-	fest.setRadiusSearch(r_neighboors); // the feature radius can be a parameter
 
 	// output dataset
 	pcl::PointCloud<pcl::FPFHSignature33>::Ptr object_features(new pcl::PointCloud<pcl::FPFHSignature33>());
@@ -325,152 +371,3 @@ int main(int argc, const char** argv)
 	*/
 
 }
-
-
-/*
-
-// pcd input file must have their coordinates in float type (SIZE 4 4 4). 
-// otherwise it won't be read
-int main(int argc, const char** argv)
-{
-
-	// check the input
-	if (argc < 2) {
-		PCL_ERROR("you must enter the filepath of the point cloud"); // take as input a pcd file
-		PCL_ERROR("there are others optional arguments; first one is original point cloud filename (before downsampling); second one is voxel size; the two other ones are normal and neighboor radii");
-		PCL_ERROR("if you don't want to use non downsampled point cloud to compute radii, just enter '_' ");
-		return (-1);
-	}
-
-	// read pcd file
-	std::string pc_filepath = argv[1];
-	std::cout << "file path : " << pc_filepath << std::endl;
-	std::string file_dir = getFileDir(pc_filepath);
-	std::cout << "file dir : " << file_dir << std::endl;
-	std::string file_name = getFileName(pc_filepath);
-	std::cout << "file name : " << file_name << std::endl;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr subsampled_object(new pcl::PointCloud<pcl::PointXYZ>); // cloud of points
-
-	if (pcl::io::loadPCDFile<pcl::PointXYZ>(pc_filepath, *subsampled_object) == -1) //* load the file
-	{
-		PCL_ERROR("Couldn't read pcd file \n");
-		return (-1);
-	}
-
-	std::cout << "Loaded "
-		<< subsampled_object->width * subsampled_object->height
-		<< " data points from test_pcd.pcd with the following fields: "
-		<< std::endl;
-
-
-	pcl::PointCloud<pcl::PointXYZ>::Ptr initial_pc(new pcl::PointCloud<pcl::PointXYZ>);
-	if (argc > 2) {
-
-		std::string pc_filepath = argv[2];
-		if (pcl::io::loadPCDFile<pcl::PointXYZ>(pc_filepath, *initial_pc) == -1) {
-			initial_pc = NULL;
-		}
-	}
-
-
-
-	float r_normals, r_neighboors;
-	if (argc == 3)
-	{
-		r_normals = 0.02;
-		r_neighboors = 0.05;
-	}
-	else {
-		if (argc == 4) {
-			float voxel_size = std::stof(argv[3]);
-			r_normals = 2.0*voxel_size;
-			r_neighboors = 5.0*voxel_size;
-		}
-		else {
-			if (argc == 5) {
-				r_normals = std::stof(argv[3]);
-				r_neighboors = std::stof(argv[4]);
-			}
-			else
-				std::cerr << "wrong number of arguments " << std::endl;
-		}
-	}
-
-
-	// compute normals
-	pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>());
-
-	// Create the normal estimation class, and pass the input dataset to it
-	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-	if (initial_pc)
-		ne.setInputCloud(initial_pc);
-	else
-		ne.setInputCloud(subsampled_object);
-	
-
-	// Create an empty kdtree representation, and pass it to the normal estimation object.
-	// Its content will be filled inside the object, based on the given input dataset (as no other search surface is given).
-	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
-	ne.setSearchMethod(tree);
-
-	// Use all neighbors in a sphere of radius 2cm by default
-	ne.setRadiusSearch(r_normals);
-
-	// Compute the features
-	ne.compute(*normals);
-
-
-	// Create the FPFH estimation class, and pass the input dataset+normals to it
-	pcl::FPFHEstimation<pcl::PointXYZ, pcl::Normal, pcl::FPFHSignature33> fest;
-	if (initial_pc)
-		fest.setInputCloud(initial_pc);
-	else
-		fest.setInputCloud(subsampled_object);
-	fest.setInputNormals(normals);
-
-	// output dataset
-	pcl::PointCloud<pcl::FPFHSignature33>::Ptr object_features(new pcl::PointCloud<pcl::FPFHSignature33>());
-
-	// Use all neighbors in a sphere of radius 5cm by default
-	fest.setRadiusSearch(r_neighboors); // the feature radius can be a parameter
-
-	// Compute the features
-	fest.compute(*object_features);
-
-	// write feature histograms in binary file 
-	std::string binary_filename = file_dir;
-	FILE* fid = fopen(binary_filename.append(file_name).append(".bin").c_str(), "wb");
-	int nV = subsampled_object->size(), nDim = 33;
-	std::cout << "nb subsample points : " << nV << std::endl;
-	fwrite(&nV, sizeof(int), 1, fid);
-	fwrite(&nDim, sizeof(int), 1, fid);
-	for (int v = 0; v < nV; v++) {
-		const pcl::PointXYZ &pt = subsampled_object->points[v];
-		float xyz[3] = { pt.x, pt.y, pt.z };
-		fwrite(xyz, sizeof(float), 3, fid);
-		const pcl::FPFHSignature33 &feature = object_features->points[v];
-		fwrite(feature.histogram, sizeof(float), 33, fid);
-	}
-
-	fclose(fid);
-
-
-	// write feature histograms in text file
-	std::string text_filename = file_dir;
-	std::ofstream text_file;
-	text_file.open(text_filename.append(file_name).append("_fpfh.txt").c_str(), std::ios::out);
-	text_file << nV << std::endl;
-	text_file << nDim << std::endl;
-	for (int v = 0; v < nV; v++) {
-		const pcl::PointXYZ &pt = subsampled_object->points[v];
-		text_file << pt.x << std::endl;
-		text_file << pt.y << std::endl;
-		text_file << pt.z << std::endl;
-		const pcl::FPFHSignature33 &feature = object_features->points[v];
-		for (int i = 0; i < 33; i++)
-		{
-			text_file << feature.histogram[i] << std::endl;
-		}
-	}
-
-}*/
