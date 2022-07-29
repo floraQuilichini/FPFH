@@ -5,7 +5,8 @@
 #include <pcl/point_types.h>
 #include <pcl/features/fpfh.h>
 #include <pcl/features/fpfh_omp.h>
-#include <pcl/io/pcd_io.h>
+//#include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/filters/voxel_grid.h>
 #include <stdio.h>
@@ -92,7 +93,7 @@ int main(int argc, const char** argv)
 
 	// check the input
 	if (argc < 3) {
-		PCL_ERROR("you must enter first the filepath of the point cloud where to compute the fpfh"); // take as input a pcd file
+		PCL_ERROR("you must enter first the filepath of the point cloud where to compute the fpfh"); 
 		PCL_ERROR("you must enter secondly the filepath of the point cloud used to approximate the surface");
 		PCL_ERROR("there is another optional argument that you can enter; it's the size of voxel for subsampling");
 		return (-1);
@@ -107,9 +108,10 @@ int main(int argc, const char** argv)
 	std::cout << "file name : " << file_name << std::endl;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr object(new pcl::PointCloud<pcl::PointXYZ>); // cloud of points
 
-	if (pcl::io::loadPCDFile<pcl::PointXYZ>(pc_filepath, *object) == -1) //* load the file
+	//if (pcl::io::loadPCDFile<pcl::PointXYZ>(pc_filepath, *object) == -1) //* load the file
+	if (pcl::io::loadPLYFile<pcl::PointXYZ>(pc_filepath, *object) == -1) //* load the file
 	{
-		PCL_ERROR("Couldn't read pcd file \n");
+		PCL_ERROR("Couldn't read ply file \n");
 		return (-1);
 	}
 
@@ -118,7 +120,7 @@ int main(int argc, const char** argv)
 		<< " data points from fpfh_pcd.pcd "
 		<< std::endl;
 
-	// read features pcd file
+	// read features ply file
 	std::string surface_pc_filepath = argv[2];
 	pcl::PointCloud<pcl::PointXYZ>::Ptr surface_pc(new pcl::PointCloud<pcl::PointXYZ>); // cloud of points
 
@@ -126,9 +128,10 @@ int main(int argc, const char** argv)
 		surface_pc = NULL;
 	else
 	{
-		if (pcl::io::loadPCDFile<pcl::PointXYZ>(surface_pc_filepath, *surface_pc) == -1) //* load the file
+		//if (pcl::io::loadPCDFile<pcl::PointXYZ>(surface_pc_filepath, *surface_pc) == -1) //* load the file
+		if (pcl::io::loadPLYFile<pcl::PointXYZ>(surface_pc_filepath, *surface_pc) == -1) //* load the file
 		{
-			PCL_ERROR("Couldn't read pcd file \n");
+			PCL_ERROR("Couldn't read ply file \n");
 			return (-1);
 		}
 
@@ -259,7 +262,7 @@ int main(int argc, const char** argv)
 	// write feature histograms in binary file 
 	std::string binary_filename = file_dir;
 	FILE* fid = fopen(binary_filename.append(file_name).append(".bin").c_str(), "wb");
-	int nV = sub_sample_object->size(), nDim = 33;
+	int nV = (int)sub_sample_object->size(), nDim = 33;
 	std::cout << "nb subsample points : " << nV << std::endl;
 	fwrite(&nV, sizeof(int), 1, fid);
 	fwrite(&nDim, sizeof(int), 1, fid);
